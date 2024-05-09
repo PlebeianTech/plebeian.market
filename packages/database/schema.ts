@@ -42,7 +42,7 @@ const standardProductColumns = {
 		.notNull()
 		.default('simple'),
 	currency: text('currency').notNull(),
-	stockQty: integer('stock_qty').notNull(),
+	stockQty: integer('stock_qty'),
 	extraCost: numeric('extra_cost').notNull().default('0'),
 	parentId: text('parent_id').references((): AnySQLiteColumn => products.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 }
