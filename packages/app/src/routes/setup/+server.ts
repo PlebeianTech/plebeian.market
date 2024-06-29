@@ -9,9 +9,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		bodyRes.adminsList = bodyRes.adminsList.toString().split(',')
 	}
 	const parsedSetupData = initialSetupDataSchema.safeParse(bodyRes)
+	console.log(parsedSetupData)
 	if (!parsedSetupData.success) {
 		error(400, parsedSetupData.error)
 	}
-	const setupRes = await doSetup(bodyRes, parsedSetupData.data.adminsList)
+	const setupRes = await doSetup(bodyRes)
 	return json(setupRes)
 }

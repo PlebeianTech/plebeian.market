@@ -387,7 +387,7 @@ export const appSettings = sqliteTable('app_settings', {
 	instanceName: text('instance_name').notNull().default('Plebeian Market'),
 	logoUrl: text('logo_url').notNull().default('/logo.svg'),
 	contactEmail: text('contact_email'),
-	ownerPk: text('owner_pk'),
+	ownerPk: text('owner_pk').references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 	allowRegister: integer('allow_register', { mode: 'boolean' }).notNull().default(true),
 	defaultCurrency: text('default_currency').notNull().default('BTC'),
 	createdAt: integer('created_at', { mode: 'timestamp' })

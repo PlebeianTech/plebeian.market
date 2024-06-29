@@ -8,7 +8,8 @@ CREATE TABLE `app_settings` (
 	`allow_register` integer DEFAULT true NOT NULL,
 	`default_currency` text DEFAULT 'BTC' NOT NULL,
 	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
-	`updated_at` integer DEFAULT (unixepoch()) NOT NULL
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
+	FOREIGN KEY (`owner_pk`) REFERENCES `users`(`id`) ON UPDATE cascade ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `app_meta` (

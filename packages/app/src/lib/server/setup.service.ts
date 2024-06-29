@@ -11,23 +11,28 @@ export type ExtendedAppSettings = NewAppSettings & {
 	adminsList: string[]
 }
 
-export const isInitialSetup = async (): Promise<boolean> => {
-	const [appSettingsRes] = await db.select().from(appSettings).execute()
-	return appSettingsRes.isFirstTimeRunning
-}
-
+// export const isInitialSetup = async (): Promise<boolean> => {
+// 	const [appSettingsRes] = await db.select().from(appSettings).execute()
+// 	return appSettingsRes.isFirstTimeRunning
+// }
+// TODO fix this, is broken
 export const getAppSettings = async () => {
 	const [appSettingsRes] = await db.select().from(appSettings).execute()
 	return appSettingsRes
 }
 
 export const doSetup = async (setupData: ExtendedAppSettings) => {
+	console.log(setupData)
 	if (!setupData.instancePk) {
 		error(400, 'Invalid request')
 	}
 
 	const decodedInstancePk = setupData.instancePk.startsWith('npub') ? decode(setupData.instancePk).data.toString() : setupData.instancePk
-	const decodedOwnerPk = setupData.ownerPk ? decode(setupData.ownerPk).data.toString() : null
+	const decodedOwnerPk = setupData.ownerPk
+		? setupData.ownerPk?.startsWith('npub')
+			? decode(setupData.ownerPk).data.toString()
+			: setupData.ownerPk
+		: null
 
 	const updatedAppSettings = await updateAppSettings({
 		...setupData,
@@ -82,7 +87,17 @@ export const updateAppSettings = async (appSettingsData: ExtendedAppSettings) =>
 	const decodedInstancePk = appSettingsData.instancePk.startsWith('npub')
 		? decode(appSettingsData.instancePk).data.toString()
 		: appSettingsData.instancePk
-	const decodedOwnerPk = appSettingsData.ownerPk ? decode(appSettingsData.ownerPk).data.toString() : null
+	const decodedOwnerPk = appSettingsData.ownerPk
+		? appSettingsData.ownerPk?.startsWith('npub')
+			? decode(appSettingsData.ownerPk).data.toString()
+			: appSettingsData.ownerPk
+		: null //appSettingsData.ownerPk ? decode(appSettingsData.ownerPk).data.toString() : null
+
+	if (appSettingsData.adminsList) {
+		const insertedUsers = await adminsToInsert(appSettingsData)
+		console.log(insertedUsers)
+		// return { appSettingsRes, insertedUsers }
+	}
 
 	const [appSettingsRes] = await db
 		.update(appSettings)
@@ -99,11 +114,6 @@ export const updateAppSettings = async (appSettingsData: ExtendedAppSettings) =>
 
 	if (!appSettingsRes) {
 		error(500, 'Failed to update app settings')
-	}
-
-	if (appSettingsData.adminsList) {
-		const insertedUsers = await adminsToInsert(appSettingsData)
-		return { appSettingsRes, insertedUsers }
 	}
 
 	return { appSettingsRes }
