@@ -390,6 +390,7 @@ const main = async () => {
 				invoiceStatus: faker.helpers.arrayElement(Object.values(INVOICE_STATUS)),
 				paymentMethod: faker.helpers.arrayElement(Object.values(PAYMENT_DETAILS_METHOD)),
 				paymentDetails: faker.finance.creditCardNumber(),
+				proof: ''
 			} as Invoice
 		})
 	})

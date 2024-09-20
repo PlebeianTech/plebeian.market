@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CashuPaymentInfo, NDKZapMethodInfo } from '@nostr-dev-kit/ndk'
+	import type { CashuPaymentInfo, NDKUserProfile, NDKZapMethodInfo } from '@nostr-dev-kit/ndk'
 	import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk'
 	import Spinner from '$lib/components/assets/spinner.svelte'
 	import { Button } from '$lib/components/ui/button/index.js'
@@ -18,7 +18,10 @@
 	type InvoiceInterface = 'qr' | 'nwc'
 
 	export let userIdToZap: string
+	export let userProfile: NDKUserProfile
 
+	$: user = $ndkStore.getUser({ pubkey: userIdToZap })
+	$: user.profile = userProfile
 	let zapAmountSats = 0
 	let zapMessage = 'Zap from Plebeian'
 	let userCanBeZapped: NDKZapMethodInfo[] = []
@@ -43,20 +46,20 @@
 		clearTimeout(checkZapInfoTimeout)
 		isLoading = false
 
-		// Ensure the component updates after setting isLoading
 		await tick()
 	})
 
 	async function checkTargetUserHasLightningAddress(): Promise<NDKZapMethodInfo[]> {
-		const user = $ndkStore.getUser({ pubkey: userIdToZap })
 		try {
-			return await user.getZapInfo()
+			const zapInfo = await user.getZapInfo(true, ['nip57'])
+
+			if (!zapInfo.length) throw Error('No zap info found')
+			return zapInfo
 		} catch (error) {
 			console.error('Failed to get zap info:', error)
 			return []
 		}
 	}
-
 	function startZapSubscription() {
 		const subscription = $ndkStore
 			.subscribe({
@@ -90,7 +93,6 @@
 	}
 
 	async function handleNip57Zap(invoiceInterface: InvoiceInterface) {
-		const user = $ndkStore.getUser({ pubkey: userIdToZap })
 		const zapRes = await user.zap(zapAmountMSats)
 		if (typeof zapRes !== 'string') {
 			zapDialogOpen = false

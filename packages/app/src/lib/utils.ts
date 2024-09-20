@@ -1,8 +1,10 @@
+import type NDKSvelte from '@nostr-dev-kit/ndk-svelte'
 import type { CreateQueryResult } from '@tanstack/svelte-query'
 import type { ClassValue } from 'clsx'
 import type { VerifiedEvent } from 'nostr-tools'
 import type { TransitionConfig } from 'svelte/transition'
 import { type NDKEvent, type NDKKind, type NDKSigner, type NDKTag, type NDKUserProfile, type NostrEvent } from '@nostr-dev-kit/ndk'
+import { bech32 } from '@scure/base'
 import { page } from '$app/stores'
 import ndkStore from '$lib/stores/ndk'
 import { clsx } from 'clsx'
@@ -431,5 +433,38 @@ export class EncryptedStorage {
 	private async deriveKey(key: string) {
 		const { pubkey } = await this.signer.user()
 		return `${key}:${pubkey}`
+	}
+}
+
+// TODO: Delete when https://github.com/nostr-dev-kit/ndk/issues/272 its closed
+export async function getNip57ZapSpecFromLud({ lud06, lud16 }: { lud06?: string; lud16?: string }, ndk: NDKSvelte): Promise<undefined> {
+	let zapEndpoint: string | undefined
+
+	if (lud16 && !lud16.startsWith('LNURL')) {
+		const [name, domain] = lud16.split('@')
+		zapEndpoint = `https://${domain}/.well-known/lnurlp/${name}`
+	} else if (lud06) {
+		const { words } = bech32.decode(lud06 as `${string}1${string}`, 1000)
+		const data = bech32.fromWords(words)
+		const utf8Decoder = new TextDecoder('utf-8')
+		zapEndpoint = utf8Decoder.decode(data)
+	}
+
+	if (!zapEndpoint) {
+		throw new Error('No zap endpoint found')
+	}
+
+	try {
+		const _fetch = ndk.httpFetch || fetch
+		const response = await _fetch(zapEndpoint)
+
+		if (response.status !== 200) {
+			const text = await response.text()
+			throw new Error(`Unable to fetch zap endpoint ${zapEndpoint}: ${text}`)
+		}
+
+		return await response.json()
+	} catch (e) {
+		throw new Error(`Unable to fetch zap endpoint ${zapEndpoint}: ${e}`)
 	}
 }

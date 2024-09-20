@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { NDKSubscription } from '@nostr-dev-kit/ndk'
 	import QrCode from '@castlenine/svelte-qrcode'
-	import { decode } from '@gandlaf21/bolt11-decode'
+	import { Invoice } from '@getalby/lightning-tools'
 	import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk'
 	import * as Dialog from '$lib/components/ui/dialog/index.js'
 	import ndkStore from '$lib/stores/ndk'
@@ -16,6 +16,7 @@
 	export let zapAmountSats = 0
 	export let lightningInvoiceData: string | undefined
 
+	$: decodedInvoice = lightningInvoiceData ? new Invoice({ pr: lightningInvoiceData }) : undefined
 	const dispatch = createEventDispatcher()
 
 	let subscription: NDKSubscription | undefined
@@ -23,8 +24,7 @@
 	let timeLeft: number | null = null
 	let interval: ReturnType<typeof setInterval> | undefined
 
-	$: if (qrDialogOpen && lightningInvoiceData) {
-		const decodedInvoice = decode(lightningInvoiceData)
+	$: if (qrDialogOpen && lightningInvoiceData && decodedInvoice?.expiry) {
 		expiryTimestamp = Date.now() / 1000 + decodedInvoice.expiry
 		setupCountdown()
 		setupSubscription()
