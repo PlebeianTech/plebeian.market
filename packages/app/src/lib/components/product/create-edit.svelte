@@ -6,7 +6,6 @@
 	import type { StallCoordinatesType } from '$lib/stores/drawer-ui'
 	import type { ValidationErrors } from '$lib/utils/zod.utils'
 	import Button from '$lib/components/ui/button/button.svelte'
-	import Checkbox from '$lib/components/ui/checkbox/checkbox.svelte'
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js'
 	import Input from '$lib/components/ui/input/input.svelte'
 	import Label from '$lib/components/ui/label/label.svelte'
@@ -16,6 +15,7 @@
 	import { createProductMutation, deleteProductMutation, editProductMutation } from '$lib/fetch/products.mutations'
 	import { createStallsByFilterQuery } from '$lib/fetch/stalls.queries'
 	import ndkStore from '$lib/stores/ndk'
+	import { focusTrap } from '$lib/utils/focusTrap'
 	import { prepareProductData, validateProduct } from '$lib/utils/product.utils'
 	import { validateForm } from '$lib/utils/zod.utils'
 	import { createEventDispatcher, onMount } from 'svelte'
@@ -23,7 +23,7 @@
 	import { get } from 'svelte/store'
 
 	import type { ProductImage } from '@plebeian/database'
-	import { createSlugId } from '@plebeian/database/utils'
+	import { createId } from '@plebeian/database/utils'
 
 	import { forbiddenPatternStore } from '../../../schema/nostr-events'
 	import Spinner from '../assets/spinner.svelte'
@@ -91,8 +91,7 @@
 	}
 
 	function addCategory() {
-		const name = `category ${categories.length + 1}`
-		categories = [...categories, { key: createSlugId(name), name, checked: true }]
+		categories = [...categories, { key: createId(), name: '', checked: true }]
 	}
 
 	async function handleSubmit(sEvent: SubmitEvent, stall: Partial<RichStall> | null) {
@@ -139,7 +138,7 @@
 	onMount(() => {
 		if (product?.categories?.length) {
 			categories = product.categories.map((categoryName) => ({
-				key: createSlugId(categoryName),
+				key: createId(),
 				name: categoryName,
 				checked: true,
 			}))
@@ -311,15 +310,25 @@
 				<div class="flex flex-col gap-1.5">
 					{#each categories as category (category.key)}
 						<div class="flex items-center space-x-2">
-							<Checkbox id="terms" bind:checked={category.checked} />
-							<span
-								data-category-key={category.key}
-								class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-								contenteditable="true"
-								bind:textContent={category.name}
+							<!-- TODO: Add focus-trap -->
+							<div use:focusTrap={true} class=" w-full">
+								<Input
+									data-tooltip="Your category"
+									bind:value={category.name}
+									required
+									class={`border-2 w-fit-content border-black ${validationErrors['name'] ? 'ring-2 ring-red-500' : ''}`}
+									type="text"
+									name="category"
+									placeholder="e.g. Fancy Wears"
+								/>
+							</div>
+							<Button
+								on:click={() => {
+									categories = categories.filter((c) => c.key !== category.key)
+								}}
+								variant="outline"
+								class="font-bold text-red-500 border-0 h-full"><span class="i-tdesign-delete-1"></span></Button
 							>
-								{category.name}
-							</span>
 						</div>
 					{/each}
 				</div>
